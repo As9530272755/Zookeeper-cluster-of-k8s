@@ -1,0 +1,206 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper
+  namespace: zookeeper
+spec:
+  ports:
+    - name: client
+      port: 2181
+  selector:
+    app: zookeeper
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper1
+  namespace: zookeeper
+spec:
+  type: NodePort        
+  ports:
+    - name: client
+      port: 2181
+      nodePort: 32181
+    - name: followers
+      port: 2888
+    - name: election
+      port: 3888
+  selector:
+    app: zookeeper
+    server-id: "1"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper2
+  namespace: zookeeper
+spec:
+  type: NodePort        
+  ports:
+    - name: client
+      port: 2181
+      nodePort: 32182
+    - name: followers
+      port: 2888
+    - name: election
+      port: 3888
+  selector:
+    app: zookeeper
+    server-id: "2"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper3
+  namespace: zookeeper
+spec:
+  type: NodePort        
+  ports:
+    - name: client
+      port: 2181
+      nodePort: 32183
+    - name: followers
+      port: 2888
+    - name: election
+      port: 3888
+  selector:
+    app: zookeeper
+    server-id: "3"
+---
+kind: Deployment
+#apiVersion: extensions/v1beta1
+apiVersion: apps/v1
+metadata:
+  name: zookeeper1
+  namespace: zookeeper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+        server-id: "1"
+    spec:
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: wal
+          emptyDir:
+            medium: Memory
+      containers:
+        - name: server
+          image: hub.zhangguiyuan.com/baseimage/zookeeper:testzk11-20211014_1314
+          imagePullPolicy: Always
+          env:
+            - name: MYID
+              value: "1"
+            - name: SERVERS
+              value: "zookeeper1,zookeeper2,zookeeper3"
+            - name: JVMFLAGS
+              value: "-Xmx2G"
+          ports:
+            - containerPort: 2181
+            - containerPort: 2888
+            - containerPort: 3888
+          volumeMounts:
+          - mountPath: "/zookeeper/data"
+            name: zookeeper-datadir-pvc-1 
+      volumes:
+        - name: zookeeper-datadir-pvc-1 
+          persistentVolumeClaim:
+            claimName: zookeeper-datadir-pvc-1
+---
+kind: Deployment
+#apiVersion: extensions/v1beta1
+apiVersion: apps/v1
+metadata:
+  name: zookeeper2
+  namespace: zookeeper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+        server-id: "2"
+    spec:
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: wal
+          emptyDir:
+            medium: Memory
+      containers:
+        - name: server
+          image: hub.zhangguiyuan.com/baseimage/zookeeper:testzk11-20211014_1314 
+          imagePullPolicy: Always
+          env:
+            - name: MYID
+              value: "2"
+            - name: SERVERS
+              value: "zookeeper1,zookeeper2,zookeeper3"
+            - name: JVMFLAGS
+              value: "-Xmx2G"
+          ports:
+            - containerPort: 2181
+            - containerPort: 2888
+            - containerPort: 3888
+          volumeMounts:
+          - mountPath: "/zookeeper/data"
+            name: zookeeper-datadir-pvc-2 
+      volumes:
+        - name: zookeeper-datadir-pvc-2
+          persistentVolumeClaim:
+            claimName: zookeeper-datadir-pvc-2
+---
+kind: Deployment
+#apiVersion: extensions/v1beta1
+apiVersion: apps/v1
+metadata:
+  name: zookeeper3
+  namespace: zookeeper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+        server-id: "3"
+    spec:
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: wal
+          emptyDir:
+            medium: Memory
+      containers:
+        - name: server
+          image: hub.zhangguiyuan.com/baseimage/zookeeper:testzk11-20211014_1314
+          imagePullPolicy: Always
+          env:
+            - name: MYID
+              value: "3"
+            - name: SERVERS
+              value: "zookeeper1,zookeeper2,zookeeper3"
+            - name: JVMFLAGS
+              value: "-Xmx2G"
+          ports:
+            - containerPort: 2181
+            - containerPort: 2888
+            - containerPort: 3888
+          volumeMounts:
+          - mountPath: "/zookeeper/data"
+            name: zookeeper-datadir-pvc-3
+      volumes:
+        - name: zookeeper-datadir-pvc-3
+          persistentVolumeClaim:
+           claimName: zookeeper-datadir-pvc-3
